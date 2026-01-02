@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CampusBites India</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="appContainer">
+        
+        <div class="sticky-wrapper">
+            <header class="app-header">
+                <div class="header-content-limit">
+                    <div class="header-top">
+                        <div class="location-info" onclick="toggleLocationModal(true)">
+                            <div class="location-label" id="locationLabel">DELIVERING TO</div>
+                            <div class="location-value-row">
+                                <i class="ri-map-pin-fill text-red"></i>
+                                <span id="currentLocationText" class="location-text-bold">Select Hostel...</span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </div>
+                        </div>
+                        <div class="profile-icon ripple">
+                            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80" alt="Profile">
+                        </div>
+                    </div>
+
+                    <div class="mode-switch-container">
+                        <div class="mode-switch active" id="btnInside" onclick="switchMode('inside')">
+                            <span class="mode-title">Inside Campus</span>
+                            <span class="mode-desc">Hostel Delivery</span>
+                        </div>
+                        <div class="mode-switch" id="btnOutside" onclick="switchMode('outside')">
+                            <span class="mode-title">Outside Vendors</span>
+                            <span class="mode-desc">Gate Pickup</span>
+                        </div>
+                    </div>
+                    
+                    <div class="search-bar-container">
+                        <div class="search-input-wrapper">
+                            <i class="ri-search-2-line search-icon"></i>
+                            <input type="text" placeholder="Search for food..." id="searchInput" onkeyup="searchData()">
+                        </div>
+                    </div>
+                </div>
+            </header>
+        </div>
+
+        <main class="app-content">
+
+            <section class="offer-section content-limit">
+                <div class="offer-slider snap-scroll" id="offerSlider">
+                    <div class="offer-slide">
+                        <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80" alt="Offer 1">
+                        <div class="offer-text"><h3>50% OFF</h3><p>First Order</p></div>
+                    </div>
+                    <div class="offer-slide">
+                        <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80" alt="Offer 2">
+                        <div class="offer-text"><h3>Free Delivery</h3><p>Hostels</p></div>
+                    </div>
+                    <div class="offer-slide">
+                        <img src="https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=800&q=80" alt="Offer 3">
+                        <div class="offer-text"><h3>Night Canteen</h3><p>Open 24/7</p></div>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="services-wrapper">
+                <div class="services-grid">
+                    <div class="service-card mall-bg ripple">
+                        <div class="service-icon"><i class="ri-store-2-fill"></i></div>
+                        <div class="service-text"><h3>City Mall</h3><p>Food Court</p></div>
+                    </div>
+                    <div class="service-card stationary-bg ripple">
+                        <div class="service-icon"><i class="ri-book-3-fill"></i></div>
+                        <div class="service-text"><h3>Stationary</h3><p>Notes & Print</p></div>
+                    </div>
+                </div>
+            </section>
+
+            <div id="gateAlert" class="gate-alert hidden">
+                <i class="ri-alarm-warning-line"></i> Outside orders are delivered to <b>Main Gate Only</b>.
+            </div>
+
+            <section class="category-section">
+                <div class="section-header-row">
+                    <h5 class="section-title">WHAT'S ON YOUR MIND?</h5>
+                </div>
+                <div class="category-scroll snap-scroll" id="categoryScroll">
+                    </div>
+            </section>
+
+            <div class="filter-bar-wrapper">
+                <div class="filter-scroll snap-scroll">
+                    <button class="filter-chip" onclick="toggleSortModal(true)">
+                        <i class="ri-equalizer-line"></i> Sort <i class="ri-arrow-down-s-fill" style="font-size:10px;"></i>
+                    </button>
+                    <button class="filter-chip">Rated 4.0+</button>
+                    <button class="filter-chip">Fastest</button>
+                    <button class="filter-chip">Pure Veg</button>
+                </div>
+            </div>
+
+            <section class="curated-section">
+                <h3 class="modern-header">Recommended</h3>
+                <div class="curated-scroll snap-scroll" id="curatedScroll">
+                    </div>
+            </section>
+
+            <section class="store-list-section">
+                <div class="section-header-row">
+                    <h3 class="modern-header" id="listTitle">Inside Canteens</h3>
+                    <span class="badge-count" id="storeCount">0</span>
+                </div>
+                <div id="storeList" class="store-container-grid">
+                    </div>
+            </section>
+
+            <div style="height: 100px;"></div>
+        </main>
+
+        <nav class="bottom-nav glass-effect">
+            <div class="nav-limit">
+                <a href="#" class="nav-item active ripple"><i class="ri-home-5-fill nav-icon"></i><span>Home</span></a>
+                <a href="#" class="nav-item ripple"><i class="ri-file-list-3-line nav-icon"></i><span>History</span></a>
+                <a href="#" class="nav-item cart-trigger ripple">
+                    <div class="relative"><i class="ri-shopping-bag-3-fill nav-icon"></i><span class="notification-dot" id="cartDot"></span></div>
+                    <span>Bag</span>
+                </a>
+                <a href="#" class="nav-item ripple"><i class="ri-user-3-line nav-icon"></i><span>Account</span></a>
+            </div>
+        </nav>
+
+        <div id="locationModal" class="bottom-sheet"><div class="sheet-overlay" onclick="toggleLocationModal(false)"></div><div class="sheet-content"><div class="sheet-handle"></div><div class="sheet-header"><h3>Select Location</h3></div><div class="location-list-scroll" id="locationListContainer"></div></div></div>
+        <div id="categoryModal" class="bottom-sheet"><div class="sheet-overlay" onclick="toggleCategoryModal(false)"></div><div class="sheet-content tall"><div class="sheet-handle"></div><div class="sheet-header"><h3>All Categories</h3><button onclick="toggleCategoryModal(false)" class="close-btn"><i class="ri-close-line"></i></button></div><div class="grid-categories" id="fullCategoryGrid"></div></div></div>
+        <div id="sortModal" class="bottom-sheet"><div class="sheet-overlay" onclick="toggleSortModal(false)"></div><div class="sheet-content"><div class="sheet-handle"></div><div class="sheet-header"><h3>Sort By</h3></div><div class="sort-options"><div class="sort-option" onclick="applySort('price_low')"><div class="sort-text">Cost: Low to High</div></div><div class="sort-option" onclick="applySort('price_high')"><div class="sort-text">Cost: High to Low</div></div><div class="sort-option" onclick="applySort('rating')"><div class="sort-text">Rating: High to Low</div></div></div></div></div>
+        <div id="cartModal" class="bottom-sheet"><div class="sheet-overlay" onclick="toggleCart(false)"></div><div class="sheet-content"><div class="sheet-handle"></div><div class="sheet-header"><h3>Your Bag</h3></div><div class="cart-items-scroll" id="cartItemsContainer"></div><div class="cart-summary"><div class="bill-row"><span>Total Pay</span><span id="cartTotal">₹0</span></div><button class="checkout-btn"><span>Pay Now</span></button></div></div></div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
