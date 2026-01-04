@@ -84,6 +84,18 @@ input { border: none; outline: none; width: 100%; font-family: inherit; font-siz
 .offer-text p { font-size: 12px; font-weight: 600; margin: 4px 0 0 0; opacity: 0.9; }
 
 /* --- SERVICES --- */
+/* ... existing service styles ... */
+
+/* NEW COLORS */
+.vehicle-bg { background: linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%); } /* Purple Gradient */
+.hostel-bg { background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%); } /* Green Gradient */
+.view-all-bg { background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%); } /* Pink/Red Gradient */
+
+/* Helper to make "View All" span full width (Optional, looks better) */
+.span-2 { grid-column: span 2; }
+
+
+
 .services-wrapper { padding: 16px; }
 .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .service-card { height: 60px; border-radius: 12px; position: relative; overflow: hidden; padding: 0 12px; display: flex; align-items: center; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
