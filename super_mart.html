@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -721,7 +720,7 @@
                     <div class="bill-summary">
                         <div class="bill-row"><span>Item Subtotal</span><span id="bill-subtotal">₹0</span></div>
                         <div class="bill-row"><span>Delivery Charge</span><span>₹40</span></div>
-                        <div class="bill-row"><span>Platform Fee</span><span>₹5</span></div>
+                        <div class="bill-row"><span>Platform Fee</span><span id="display-platform-fee">₹5</span></div>
                         <div class="bill-row total"><span>TOTAL TO PAY</span><span id="bill-total">₹0</span></div>
                     </div>
 
@@ -1150,25 +1149,18 @@
     const checkoutModal = document.getElementById('checkout-modal');
     const toast = document.getElementById('toast');
 
-    const PLATFORM_FEE = 5;
+    let currentPlatformFee = 5; // Variable to store random fee
 
-    /* --- DYNAMIC DELIVERY CHARGE LOGIC (FIXED) --- */
+    /* --- DYNAMIC DELIVERY CHARGE LOGIC --- */
     function getDynamicDeliveryCharge() {
         const history = JSON.parse(localStorage.getItem('omni_order_history')) || [];
         const currentOrderNum = history.length + 1;
-
-        if (currentOrderNum === 1) return 19;
-        if (currentOrderNum === 2) return 19;
-        if (currentOrderNum === 3) return 24;
-        if (currentOrderNum === 4) return 24;
-        if (currentOrderNum === 5) return 29;
-        if (currentOrderNum === 6) return 24;
-        if (currentOrderNum === 7) return 29;
-        if (currentOrderNum === 8) return 34;
-        if (currentOrderNum === 9) return 29;
-        if (currentOrderNum === 10) return 19;
-        
-        return 34; // 11th order and beyond
+        // Simple logic: varies slightly based on order count
+        if (currentOrderNum <= 2) return 19;
+        if (currentOrderNum <= 4) return 24;
+        if (currentOrderNum <= 6) return 29;
+        if (currentOrderNum <= 9) return 24;
+        return 34; 
     }
 
     updateCartUI();
@@ -1176,6 +1168,12 @@
     // PERSISTENT CHECK: Check for pending payment state on reload
     document.addEventListener('DOMContentLoaded', () => {
         const paymentStatus = localStorage.getItem('omni_payment_pending');
+        
+        // Load stored fee if exists, otherwise default 5
+        if(localStorage.getItem('omni_stored_fee')) {
+            currentPlatformFee = parseInt(localStorage.getItem('omni_stored_fee'));
+        }
+
         if (paymentStatus === 'true') {
             const method = localStorage.getItem('omni_payment_method');
             // Restore based on which method was used
@@ -1185,15 +1183,16 @@
             document.getElementById('checkout-step-1').style.display = 'none';
             document.getElementById('checkout-step-2').style.display = 'none';
 
+            // Recalculate Total for Restore
+            let subtotal = 0;
+            cart.forEach(item => subtotal += item.price);
+            const dynamicDelivery = getDynamicDeliveryCharge();
+            const finalTotal = subtotal + dynamicDelivery + currentPlatformFee;
+
             if (method === 'qr') {
                 document.getElementById('checkout-step-3').style.display = 'block';
                 document.getElementById('checkout-step-4-app').style.display = 'none';
                 
-                // Re-render QR details
-                let subtotal = 0;
-                cart.forEach(item => subtotal += item.price);
-                const dynamicDelivery = getDynamicDeliveryCharge();
-                const finalTotal = subtotal + dynamicDelivery + PLATFORM_FEE;
                 document.getElementById('qr-amount').innerText = '₹' + finalTotal.toLocaleString();
                 
                 const upiID = "manjeetkeshrihkp@oksbi";
@@ -1201,34 +1200,24 @@
                 const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLink)}`;
                 document.getElementById('dynamic-qr').src = qrUrl;
 
-                // Resume Timer with Robust Logic
                 const expiry = localStorage.getItem('omni_payment_expiry');
                 if (expiry) {
                     let remaining = Math.floor((parseInt(expiry) - Date.now()) / 1000);
-                    if (remaining > 0) {
-                        startTimer(remaining, 'timer');
-                    } else {
-                        handleExpiredSession();
-                    }
+                    if (remaining > 0) startTimer(remaining, 'timer');
+                    else handleExpiredSession();
                 }
 
             } else if (method === 'app') {
                 document.getElementById('checkout-step-4-app').style.display = 'block';
-                
-                // Resume Timer
                 const expiry = localStorage.getItem('omni_payment_expiry');
                 if (expiry) {
                     let remaining = Math.floor((parseInt(expiry) - Date.now()) / 1000);
-                    if (remaining > 0) {
-                        startTimer(remaining, 'app-timer');
-                    } else {
-                        handleExpiredSession();
-                    }
+                    if (remaining > 0) startTimer(remaining, 'app-timer');
+                    else handleExpiredSession();
                 }
             }
         }
         
-        // Step-by-Step Data Capture
         ['c-name', 'c-phone', 'c-hostel'].forEach(id => {
             const el = document.getElementById(id);
             if(el) el.addEventListener('change', () => {
@@ -1293,14 +1282,26 @@
 
     /* --- CHECKOUT FUNCTIONS --- */
     window.openCheckoutModal = function(isReturningPayment = false) {
-        // --- BUG FIX: RESET STATE FOR NEW CHECKOUTS ---
+        // --- 1. RESOLVE FEE LOGIC FIRST ---
+        // Check if a fee is already stored for this session
+        let storedFee = localStorage.getItem('omni_stored_fee');
+
+        if (storedFee) {
+            // Use existing fee
+            currentPlatformFee = parseInt(storedFee);
+        } else {
+            // Generate NEW fee only if none exists
+            currentPlatformFee = Math.floor(Math.random() * 5) + 1;
+            localStorage.setItem('omni_stored_fee', currentPlatformFee);
+        }
+
+        // --- 2. HANDLE RESET LOGIC FOR NEW CHECKOUTS ---
         if (!isReturningPayment) {
             clearInterval(timerInterval);
             localStorage.removeItem('omni_payment_pending');
             localStorage.removeItem('omni_payment_method');
             localStorage.removeItem('omni_payment_expiry');
             
-            // Reset UI Visibility
             document.getElementById('checkout-step-1').style.display = 'block';
             document.getElementById('checkout-step-2').style.display = 'none';
             document.getElementById('checkout-step-3').style.display = 'none';
@@ -1318,19 +1319,23 @@
             document.getElementById('welcome-user-msg').innerText = `Welcome back, ${savedData.name}!`;
         }
         
-        // CALC TOTALS WITH DYNAMIC DELIVERY
+        // CALC TOTALS
         let subtotal = 0;
         cart.forEach(item => subtotal += item.price);
         const dynamicDelivery = getDynamicDeliveryCharge();
-        const finalTotal = subtotal + dynamicDelivery + PLATFORM_FEE;
+        const finalTotal = subtotal + dynamicDelivery + currentPlatformFee;
         
         billSubtotalEl.innerText = '₹' + subtotal.toLocaleString();
         
-        // Find delivery row and update
+        // Update Delivery UI
         const billRows = document.querySelectorAll('.bill-summary .bill-row');
         if(billRows.length > 1) {
             billRows[1].querySelector('span:last-child').innerText = '₹' + dynamicDelivery;
         }
+
+        // Update Platform Fee UI
+        const feeEl = document.getElementById('display-platform-fee');
+        if(feeEl) feeEl.innerText = '₹' + currentPlatformFee;
 
         billTotalEl.innerText = '₹' + finalTotal.toLocaleString();
         document.getElementById('payment-step-total').innerText = '₹' + finalTotal.toLocaleString();
@@ -1346,7 +1351,6 @@
 
     window.closeCheckoutModal = function() { 
         checkoutModal.classList.remove('open');
-        // --- BUG FIX: STOP TIMER AND CLEAR PENDING IF USER MANUALLY CLOSES ---
         clearInterval(timerInterval);
         localStorage.removeItem('omni_payment_pending');
     }
@@ -1393,7 +1397,7 @@
         let subtotal = 0;
         cart.forEach(item => subtotal += item.price);
         const dynamicDelivery = getDynamicDeliveryCharge();
-        const finalTotal = subtotal + dynamicDelivery + PLATFORM_FEE;
+        const finalTotal = subtotal + dynamicDelivery + currentPlatformFee;
         
         document.getElementById('qr-amount').innerText = '₹' + finalTotal.toLocaleString();
         const upiLink = `upi://pay?pa=manjeetkeshrihkp@oksbi&pn=OMNI&am=${finalTotal}&cu=INR`;
@@ -1410,7 +1414,7 @@
             let subtotal = 0;
             cart.forEach(item => subtotal += item.price);
             const dynamicDelivery = getDynamicDeliveryCharge();
-            const finalTotal = subtotal + dynamicDelivery + PLATFORM_FEE;
+            const finalTotal = subtotal + dynamicDelivery + currentPlatformFee;
             
             localStorage.setItem('omni_payment_pending', 'true');
             localStorage.setItem('omni_payment_method', 'app');
@@ -1427,15 +1431,12 @@
         }, 2000);
     }
 
-    /* --- FIXED TIMER LOGIC --- */
     function startTimer(duration, displayId) {
         let timer = duration;
         const display = document.getElementById(displayId);
         if (!display) return;
 
-        // Immediate update
         updateTimerDisplay(timer, display);
-
         clearInterval(timerInterval);
         timerInterval = setInterval(() => {
             timer--;
@@ -1476,21 +1477,28 @@
         finishOrder(txnId);
     }
 
-    /* --- GOOGLE FORM SUBMISSION & HISTORY SAVING --- */
+/* --- GOOGLE FORM SUBMISSION & HISTORY SAVING --- */
     window.finishOrder = function(txnId) {
         const orderId = 'ORD' + Math.floor(Math.random() * 1000000);
         let subtotal = 0;
         let itemsList = "";
+        
+        // 1. Calculate subtotal and build clean items list
         cart.forEach(item => {
             subtotal += item.price;
             itemsList += `${item.title} (₹${item.price}) | `;
         });
         
         const dynamicDelivery = getDynamicDeliveryCharge();
-        const total = subtotal + dynamicDelivery + PLATFORM_FEE;
+        // 2. Calculate Final Total
+        const total = subtotal + dynamicDelivery + currentPlatformFee;
         const user = JSON.parse(localStorage.getItem('omni_user'));
 
-        // SAVE DATA INCLUDING DYNAMIC CHARGE
+        // --- FIX: Add details to the TOTAL entry instead of items ---
+        // This will look like: "150 (Sub: 105, Del: 40, Fee: 5)" in your sheet
+        const totalWithDetails = `${total} (DC: ${dynamicDelivery}, PF: ${currentPlatformFee})`;
+
+        // 3. Save to Local History
         const history = JSON.parse(localStorage.getItem('omni_order_history')) || [];
         history.unshift({ 
             id: '#' + orderId, 
@@ -1498,20 +1506,26 @@
             items: [...cart], 
             itemSubtotal: subtotal,
             delivery: dynamicDelivery, 
-            platform: PLATFORM_FEE,   
+            platform: currentPlatformFee,   
             total: total, 
             status: "Processing" 
         });
         localStorage.setItem('omni_order_history', JSON.stringify(history));
 
+        // 4. Send to Google Sheet
         const formURL = "https://docs.google.com/forms/d/e/1FAIpQLSchH1TTV2xGTEKiZzsW2gk8ndIQThOC__J-x2n5-QQa7uTsBQ/formResponse";
         const body = new URLSearchParams();
         body.append("entry.1661471619", orderId);
         body.append("entry.1343328677", user.name);
         body.append("entry.1735888749", user.phone);
         body.append("entry.385864934", user.hostel);
+        
+        // Clean items list (No fees here)
         body.append("entry.665325514", itemsList);
-        body.append("entry.344688394", total);
+        
+        // Total column gets the amount PLUS the breakdown
+        body.append("entry.344688394", totalWithDetails);
+        
         body.append("entry.1266334251", txnId);
 
         fetch(formURL, {
@@ -1546,7 +1560,7 @@
         });
         
         successBillItems.innerHTML += `<div class="os-item-row" style="border-top:1px dashed #444; margin-top:5px; padding-top:5px;"><span>Delivery Charge</span><span>₹${deliveryCharge}</span></div>`;
-        successBillItems.innerHTML += `<div class="os-item-row"><span>Platform Fee</span><span>₹${PLATFORM_FEE}</span></div>`;
+        successBillItems.innerHTML += `<div class="os-item-row"><span>Platform Fee</span><span>₹${currentPlatformFee}</span></div>`;
         
         document.getElementById('inv-subtotal').innerText = '₹' + subtotal.toLocaleString();
         document.getElementById('inv-total').innerText = '₹' + total.toLocaleString();
@@ -1568,6 +1582,7 @@
         cart = [];
         localStorage.removeItem('omni_cart');
         localStorage.removeItem('omni_payment_pending');
+        localStorage.removeItem('omni_stored_fee'); // Clear stored fee
         updateCartUI();
     }
 
