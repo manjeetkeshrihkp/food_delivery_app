@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Strink Ride | Campus Auto</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#050505',
+                        cardbg: '#121212',
+                        accent: '#FACC15',
+                        accentHover: '#EAB308',
+                        success: '#10b981',
+                    },
+                    boxShadow: {
+                        'neon': '0 0 20px rgba(250, 204, 21, 0.3)',
+                    },
+                    animation: {
+                        'slide-down': 'slideDown 0.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        slideDown: {
+                            '0%': { opacity: '0', transform: 'translateY(-10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #050505; }
+        
+        /* Hides scrollbar but allows scrolling */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Leaflet Customizations */
+        .leaflet-popup-content-wrapper {
+            background: rgba(18, 18, 18, 0.9);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid #333;
+            border-radius: 12px;
+        }
+        .leaflet-popup-tip { background: #121212; }
+        .leaflet-routing-container { display: none !important; }
+        .leaflet-interactive { stroke-dasharray: 10, 10; animation: dash 30s linear infinite; }
+        @keyframes dash { to { stroke-dashoffset: -1000; } }
+    </style>
+</head>
+<body class="text-gray-100 h-[100dvh] w-screen overflow-hidden flex flex-col bg-darkbg">
+
+    <div class="fixed top-0 left-0 w-full z-[1000] pt-safe-top px-6 py-4 flex justify-between items-center pointer-events-none">
+        <div class="flex items-center gap-3 pointer-events-auto">
+            <div class="w-10 h-10 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center text-accent text-lg font-bold shadow-lg">
+                <i class="fas fa-taxi"></i>
+            </div>
+            <h1 class="text-xl font-extrabold tracking-tight text-white drop-shadow-md bg-black/30 backdrop-blur-sm px-2 rounded-lg">
+                Strink<span class="text-accent">Ride</span>
+            </h1>
+        </div>
+        <button class="pointer-events-auto bg-red-500/90 backdrop-blur-xl text-white px-4 py-2 rounded-full text-xs font-bold border border-red-400/30 flex items-center gap-2 shadow-neon transition hover:bg-red-600">
+            <i class="fas fa-shield-halved"></i> SOS
+        </button>
+    </div>
+
+    <div class="relative h-[45%] w-full flex-shrink-0 z-0">
+        <div id="map" class="h-full w-full bg-[#0f0f0f]"></div>
+        
+        <div id="route-info" class="hidden absolute bottom-12 left-6 right-6 z-[500] pointer-events-none">
+            <div class="bg-black/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex justify-between items-center shadow-2xl transform translate-y-2 transition-all duration-500">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent animate-pulse">
+                        <i class="fas fa-road"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-gray-400 uppercase tracking-wider">Distance</p>
+                        <h3 id="dist-val" class="text-lg font-bold text-white">...</h3>
+                    </div>
+                </div>
+                <div class="h-8 w-[1px] bg-gray-700"></div>
+                <div class="text-right">
+                    <p class="text-[10px] text-gray-400 uppercase tracking-wider">Est. Time</p>
+                    <h3 id="time-val" class="text-lg font-bold text-success">-- min</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-1 min-h-0 -mt-6 bg-cardbg rounded-t-[30px] border-t border-white/5 relative z-[800] shadow-[0_-10px_40px_rgba(0,0,0,0.8)] flex flex-col">
+        
+        <div class="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mt-4 mb-2 flex-shrink-0"></div>
+
+        <div class="overflow-y-auto px-6 pt-4 pb-36 no-scrollbar w-full h-full">
+            
+            <div class="bg-darkbg/50 border border-white/5 rounded-2xl p-1 mb-6 relative">
+                <div class="absolute left-[27px] top-[45px] bottom-[45px] w-[2px] border-l-2 border-dashed border-gray-700 pointer-events-none"></div>
+
+                <div class="group flex items-center p-3 hover:bg-white/5 rounded-xl transition cursor-pointer">
+                    <div class="w-8 flex justify-center flex-shrink-0">
+                        <span class="relative flex h-3 w-3">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-3 w-3 bg-accent"></span>
+                        </span>
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <label class="text-[10px] text-gray-500 font-bold tracking-wider">PICKUP</label>
+                        <div class="flex items-center justify-between">
+                            <input type="text" value="Parul University" readonly class="bg-transparent text-white font-medium w-full outline-none cursor-pointer text-sm sm:text-base">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="h-[1px] bg-gray-800 mx-12"></div>
+
+                <div class="relative">
+                    <div onclick="toggleDropdown()" class="group flex items-center p-3 hover:bg-white/5 rounded-xl transition cursor-pointer">
+                        <div class="w-8 flex justify-center flex-shrink-0">
+                            <div class="h-3 w-3 bg-white border-2 border-gray-500 rounded-sm"></div>
+                        </div>
+                        <div class="ml-3 flex-1 flex justify-between items-center">
+                            <div>
+                                <label class="text-[10px] text-gray-500 font-bold tracking-wider">DROP-OFF</label>
+                                <div id="selected-text" class="text-gray-500 font-medium text-sm sm:text-base">Select Destination</div>
+                                <input type="hidden" id="destination-select" value="">
+                            </div>
+                            <i id="dropdown-arrow" class="fas fa-chevron-down text-gray-500 text-sm transition-transform duration-300"></i>
+                        </div>
+                    </div>
+
+                    <div id="dropdown-menu" class="hidden absolute top-full left-0 w-full mt-2 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden animate-slide-down">
+                        <div class="max-h-56 overflow-y-auto custom-scroll">
+                            <div class="px-4 py-2 bg-gray-800/50 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Popular</div>
+                            <div onclick="selectLocation('station', 'Railway Station')" class="flex items-center gap-3 p-3 hover:bg-white/10 cursor-pointer border-b border-white/5">
+                                <i class="fas fa-train w-6 text-center text-blue-400"></i> <span class="text-white font-medium text-sm">Vadodara Railway Station</span>
+                            </div>
+                            <div onclick="selectLocation('bus_depot', 'Central Bus Depot')" class="flex items-center gap-3 p-3 hover:bg-white/10 cursor-pointer border-b border-white/5">
+                                <i class="fas fa-bus w-6 text-center text-red-400"></i> <span class="text-white font-medium text-sm">Central Bus Depot</span>
+                            </div>
+                            
+                            <div class="px-4 py-2 bg-gray-800/50 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Hangouts</div>
+                            <div onclick="selectLocation('inorbit', 'Inorbit Mall')" class="flex items-center gap-3 p-3 hover:bg-white/10 cursor-pointer border-b border-white/5">
+                                <i class="fas fa-shopping-bag w-6 text-center text-pink-400"></i> <span class="text-white font-medium text-sm">Inorbit Mall</span>
+                            </div>
+                            <div onclick="selectLocation('sayaji', 'Sayaji Baug (Garden)')" class="flex items-center gap-3 p-3 hover:bg-white/10 cursor-pointer border-b border-white/5">
+                                <i class="fas fa-tree w-6 text-center text-green-400"></i> <span class="text-white font-medium text-sm">Sayaji Baug</span>
+                            </div>
+
+                            <div class="px-4 py-2 bg-gray-800/50 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Areas</div>
+                            <div onclick="selectLocation('waghodia', 'Waghodia Chokdi')" class="flex items-center gap-3 p-3 hover:bg-white/10 cursor-pointer border-b border-white/5">
+                                <i class="fas fa-road w-6 text-center text-gray-400"></i> <span class="text-white font-medium text-sm">Waghodia Chokdi</span>
+                            </div>
+                            <div onclick="selectLocation('amitnagar', 'Amit Nagar Circle')" class="flex items-center gap-3 p-3 hover:bg-white/10 cursor-pointer border-b border-white/5">
+                                <i class="fas fa-circle-notch w-6 text-center text-gray-400"></i> <span class="text-white font-medium text-sm">Amit Nagar Circle</span>
+                            </div>
+                            <div onclick="selectLocation('airport', 'Vadodara Airport')" class="flex items-center gap-3 p-3 hover:bg-white/10 cursor-pointer border-b border-white/5">
+                                <i class="fas fa-plane w-6 text-center text-purple-400"></i> <span class="text-white font-medium text-sm">Vadodara Airport</span>
+                            </div>
+                            <div onclick="selectLocation('alkapuri', 'Alkapuri')" class="flex items-center gap-3 p-3 hover:bg-white/10 cursor-pointer">
+                                <i class="fas fa-building w-6 text-center text-teal-400"></i> <span class="text-white font-medium text-sm">Alkapuri</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="findDrivers()" class="w-full bg-accent hover:bg-accentHover text-black font-bold py-4 rounded-xl shadow-neon transition transform active:scale-95 flex items-center justify-center gap-3 text-lg mb-6">
+                Find Auto <i class="fas fa-arrow-right"></i>
+            </button>
+
+            <div id="results-area" class="hidden transition-all pb-10">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-white font-bold">Nearby Autos</h3>
+                    <div class="text-xs text-success animate-pulse">● Live</div>
+                </div>
+                <div id="driver-list" class="space-y-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="fixed bottom-0 w-full bg-black/90 backdrop-blur-xl border-t border-white/10 px-8 py-3 flex justify-between items-center z-[1000] pb-safe-bottom">
+        <button class="flex flex-col items-center text-accent gap-1"><i class="fas fa-map text-lg drop-shadow-[0_0_5px_rgba(250,204,21,0.8)]"></i><span class="text-[10px] font-medium">Ride</span></button>
+        <button class="flex flex-col items-center text-gray-500 hover:text-gray-300 gap-1 transition"><i class="fas fa-receipt text-lg"></i><span class="text-[10px] font-medium">Activity</span></button>
+        <button class="flex flex-col items-center text-gray-500 hover:text-gray-300 gap-1 transition"><i class="fas fa-user text-lg"></i><span class="text-[10px] font-medium">Account</span></button>
+    </div>
+
+    <div id="call-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm hidden z-[2000] flex items-end sm:items-center justify-center p-4">
+        <div class="bg-[#18181b] w-full sm:w-96 rounded-3xl p-6 border border-gray-800 shadow-2xl mb-safe-bottom">
+            <div class="w-12 h-1 bg-gray-700 rounded-full mx-auto mb-6"></div>
+            <div id="modal-content" class="text-center"></div>
+            <button onclick="closeModal()" class="mt-6 w-full py-3.5 bg-gray-800 text-gray-300 font-bold rounded-xl hover:bg-gray-700 transition">Cancel</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    
+    <script>
+        // --- LOCAL DATA ---
+        const MOCK_DRIVERS = [
+            { id: 101, name: "Raju Bhai", vehicle: "Auto - GJ06 AA 1111", location: "Parul Gate", rating: 4.9 },
+            { id: 102, name: "Suresh Kumar", vehicle: "Auto - GJ06 BB 2222", location: "Waghodia Chokdi", rating: 4.7 },
+            { id: 103, name: "Vijay Singh", vehicle: "Auto - GJ06 CC 3333", location: "Limda", rating: 4.8 },
+            { id: 104, name: "Amit Patel", vehicle: "Auto - GJ06 DD 4444", location: "Ishwar Hostel", rating: 4.6 },
+            { id: 105, name: "Vikram Rathod", vehicle: "Auto - GJ06 EE 5555", location: "Jagdish Farsan", rating: 5.0 },
+            { id: 106, name: "Deepak Oad", vehicle: "Auto - GJ06 FF 6666", location: "Sherhi", rating: 4.5 },
+            { id: 107, name: "Manoj Joshi", vehicle: "Auto - GJ06 GG 7777", location: "Waghodia Road", rating: 4.8 },
+            { id: 108, name: "Anil Bhai", vehicle: "Auto - GJ06 HH 8888", location: "Parul Main Gate", rating: 4.9 },
+            { id: 109, name: "Sunil Wagh", vehicle: "Auto - GJ06 JJ 9999", location: "Campus", rating: 4.4 }
+        ];
+
+        const locations = {
+            parul: [22.2887, 73.3634], 
+            station: [22.3108, 73.1808], 
+            bus_depot: [22.3135, 73.1814],
+            airport: [22.3362, 73.2263], 
+            alkapuri: [22.3125, 73.1770], 
+            fatehgunj: [22.3207, 73.1882], 
+            mandvi: [22.3218, 73.1663],
+            inorbit: [22.3213, 73.1738],
+            sayaji: [22.3117, 73.1895],
+            waghodia: [22.2855, 73.2295],
+            amitnagar: [22.3361, 73.2003]
+        };
+        let map, routingControl = null;
+
+        function initMap() {
+            map = L.map('map', { zoomControl: false }).setView(locations.parul, 13);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+            const parulIcon = L.divIcon({ className: 'custom-pin', html: `<div class="relative w-4 h-4"><div class="absolute inset-0 bg-yellow-500 rounded-full animate-ping opacity-75"></div><div class="relative w-4 h-4 bg-yellow-500 rounded-full border-2 border-white"></div></div>`, iconSize: [16, 16] });
+            L.marker(locations.parul, { icon: parulIcon }).addTo(map).bindPopup("<b>Parul Univ.</b><br>Pickup Point").openPopup();
+            
+            // Fix map resizing bugs
+            setTimeout(() => { map.invalidateSize(); }, 500);
+        }
+
+        function toggleDropdown() {
+            const menu = document.getElementById('dropdown-menu');
+            const arrow = document.getElementById('dropdown-arrow');
+            menu.classList.toggle('hidden');
+            if(menu.classList.contains('hidden')) { arrow.style.transform = 'rotate(0deg)'; }
+            else { arrow.style.transform = 'rotate(180deg)'; }
+        }
+
+        function selectLocation(value, text) {
+            const textDisplay = document.getElementById('selected-text');
+            textDisplay.innerText = text;
+            textDisplay.classList.remove('text-gray-500');
+            textDisplay.classList.add('text-white');
+            document.getElementById('destination-select').value = value;
+            toggleDropdown();
+            calculateRoute();
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.closest('.group') && !event.target.closest('#dropdown-menu')) {
+                document.getElementById('dropdown-menu').classList.add('hidden');
+                document.getElementById('dropdown-arrow').style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function calculateRoute() {
+            const destKey = document.getElementById('destination-select').value;
+            if (!destKey) return;
+            const start = locations.parul; const end = locations[destKey];
+
+            if (routingControl) map.removeControl(routingControl);
+
+            routingControl = L.Routing.control({
+                waypoints: [L.latLng(start[0], start[1]), L.latLng(end[0], end[1])],
+                routeWhileDragging: false, draggableWaypoints: false, addWaypoints: false, fitSelectedRoutes: true, show: false,
+                lineOptions: { styles: [{color: '#FACC15', opacity: 0.8, weight: 6}] },
+                createMarker: function(i, wp, nWps) {
+                    if (i === nWps - 1) {
+                        return L.marker(wp.latLng, { icon: L.divIcon({ className: 'custom-pin', html: `<div class="w-4 h-4 bg-white rounded-sm border-2 border-gray-500 shadow-neon"></div>`, iconSize: [16, 16] }) });
+                    } return null; 
+                }
+            }).addTo(map);
+
+            routingControl.on('routesfound', function(e) {
+                const summary = e.routes[0].summary;
+                document.getElementById('dist-val').innerText = (summary.totalDistance / 1000).toFixed(1) + " km";
+                document.getElementById('time-val').innerText = Math.round(summary.totalTime / 60) + " min";
+                document.getElementById('route-info').classList.remove('hidden');
+            });
+        }
+
+        async function findDrivers() {
+            if(!document.getElementById('destination-select').value) { alert("Please select a destination first."); return; }
+            const container = document.getElementById('driver-list');
+            const resultsArea = document.getElementById('results-area');
+            resultsArea.classList.remove('hidden'); 
+            
+            // Scroll a bit to show results
+            setTimeout(() => {
+                resultsArea.scrollIntoView({behavior: "smooth", block: "start"});
+            }, 100);
+            
+            container.innerHTML = `<div class="text-center py-6"><i class="fas fa-circle-notch fa-spin text-accent text-2xl"></i></div>`;
+
+            await new Promise(r => setTimeout(r, 1000)); 
+
+            container.innerHTML = '';
+            MOCK_DRIVERS.forEach(driver => {
+                const card = `<div class="bg-[#18181b] border border-gray-700 p-4 rounded-xl flex items-center justify-between shadow-lg"><div class="flex items-center gap-3"><div class="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700"><i class="fas fa-taxi text-yellow-500"></i></div><div><h4 class="font-bold text-white">${driver.name}</h4><div class="flex items-center text-xs text-gray-400 mt-0.5"><span class="text-yellow-400 mr-2"><i class="fas fa-star"></i> ${driver.rating}</span><span class="bg-gray-800 px-2 py-0.5 rounded text-[10px] border border-gray-700">AUTO</span></div></div></div><button onclick="callDriver(${driver.id}, '${driver.name}')" class="bg-accent text-black w-10 h-10 rounded-full flex items-center justify-center hover:bg-yellow-400 transition shadow-[0_0_10px_rgba(250,204,21,0.5)]"><i class="fas fa-phone"></i></button></div>`;
+                container.innerHTML += card;
+            });
+        }
+
+        async function callDriver(id, name) {
+            const modal = document.getElementById('call-modal'); const content = document.getElementById('modal-content');
+            modal.classList.remove('hidden');
+            content.innerHTML = `<div class="text-accent text-2xl mb-2 animate-spin"><i class="fas fa-circle-notch"></i></div><h3 class="text-white font-bold">Calling ${name}...</h3><p class="text-gray-400 text-sm">Masked Number Active</p>`;
+            
+            await new Promise(r => setTimeout(r, 2000));
+            
+            content.innerHTML = `<div class="text-success text-4xl mb-2"><i class="fas fa-check-circle"></i></div><h3 class="text-white font-bold">Connected!</h3><p class="text-gray-400 text-sm">Ringing on driver's phone...</p>`;
+        }
+
+        function closeModal() { document.getElementById('call-modal').classList.add('hidden'); }
+        window.onload = initMap;
+    </script>
+</body>
+</html>
