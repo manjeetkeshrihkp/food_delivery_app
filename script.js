@@ -2,9 +2,9 @@
 const allCategories = [
     { name: "Burgers", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&q=80" },
     { name: "Pizza", img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200&q=80" },
-    { name: "Biryani", img: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=200&q=80" },
-    { name: "Rolls", img: "https://images.unsplash.com/photo-1536521642388-441263f88a61?w=200&q=80" },
-    { name: "Coffee", img: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=200&q=80" },
+    { name: "Biryani", img: "https://b.zmtcdn.com/data/o2_assets/bf2d0e73add1c206aeeb9fec762438111727708719.png" },
+    { name: "Chicken", img: "https://b.zmtcdn.com/data/dish_images/197987b7ebcd1ee08f8c25ea4e77e20f1634731334.png" },
+    { name: "Dosa", img: "https://b.zmtcdn.com/data/o2_assets/8dc39742916ddc369ebeb91928391b931632716660.png" },
     { name: "Chinese", img: "https://images.unsplash.com/photo-1585032226651-759b368d7246?w=200&q=80" },
     { name: "Healthy", img: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&q=80" },
     { name: "Cake", img: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=200&q=80" },
@@ -181,4 +181,5 @@ function applySort(type) {
     if(type === 'rating') filtered.sort((a,b) => b.rating - a.rating);
     renderStores(filtered);
     toggleSortModal(false);
+
 }
