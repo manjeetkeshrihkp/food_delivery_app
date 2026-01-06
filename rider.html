@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Strink Driver | Partner</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#050505',
+                        cardbg: '#121212',
+                        accent: '#FACC15',
+                        accentHover: '#EAB308',
+                        success: '#10b981',
+                    },
+                    boxShadow: {
+                        'neon': '0 0 20px rgba(250, 204, 21, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Inter', sans-serif; background-color: #050505; } </style>
+</head>
+<body class="text-gray-100 h-[100dvh] w-screen overflow-hidden flex flex-col bg-darkbg">
+
+    <div class="px-6 py-4 flex justify-between items-center border-b border-white/10 bg-[#121212]">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gray-800 border border-gray-600 flex items-center justify-center">
+                <i class="fas fa-user text-gray-400"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-sm">Raju Bhai</h3>
+                <div class="flex items-center text-[10px] gap-1 text-gray-400">
+                    <i class="fas fa-star text-yellow-500"></i> 4.9 • GJ06 AA 1111
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-800 px-3 py-1 rounded-full border border-gray-700">
+            <span class="text-xs font-mono font-bold text-accent">₹450.00</span>
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col items-center justify-center relative">
+        
+        <div id="status-display" class="text-center z-10 transition-all duration-500">
+            <div class="relative w-40 h-40 flex items-center justify-center mx-auto mb-6">
+                <div class="absolute inset-0 bg-accent rounded-full opacity-20 animate-ping"></div>
+                <div class="absolute inset-4 bg-accent rounded-full opacity-10 animate-ping" style="animation-delay: 0.5s"></div>
+                <div class="w-24 h-24 bg-[#121212] rounded-full border-2 border-accent flex items-center justify-center shadow-neon">
+                    <i class="fas fa-wifi text-accent text-3xl"></i>
+                </div>
+            </div>
+            <h1 class="text-2xl font-bold text-white">You are Online</h1>
+            <p class="text-gray-500 mt-2 text-sm">Waiting for ride requests...</p>
+        </div>
+
+        <div id="accepted-view" class="hidden text-center z-10 w-full px-6 animate-fade-in">
+             <div class="w-24 h-24 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-6 text-success text-4xl border-2 border-success shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+                <i class="fas fa-check"></i>
+            </div>
+            <h2 class="text-3xl font-bold text-white mb-2">Ride Accepted!</h2>
+            <p class="text-gray-400 mb-8 text-sm">Please navigate to the pickup point.</p>
+            <button onclick="location.reload()" class="w-full py-4 bg-gray-800 rounded-xl text-white font-bold border border-gray-700 hover:bg-gray-700 transition">Complete Ride</button>
+        </div>
+
+    </div>
+
+    <div id="order-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col justify-end pb-safe-bottom">
+        <div class="bg-[#1a1a1a] border-t border-accent rounded-t-3xl p-6 shadow-[0_-10px_50px_rgba(250,204,21,0.2)] animate-slide-up relative overflow-hidden">
+            <div class="absolute top-0 left-0 h-1.5 bg-accent w-full animate-[width_10s_linear_forwards]"></div>
+            
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h3 class="text-white font-bold text-2xl">New Request</h3>
+                    <p class="text-gray-400 text-xs mt-1">2.1 km away • Pickup in 5 mins</p>
+                </div>
+                <div class="bg-gray-800 px-3 py-2 rounded-lg border border-gray-700">
+                     <span class="text-xl font-bold text-success">₹45</span>
+                </div>
+            </div>
+
+            <div class="bg-black/40 rounded-xl p-4 border border-white/5 space-y-3 mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-2 rounded-full bg-accent"></div>
+                    <div><p class="text-[10px] text-gray-500 font-bold uppercase">Pickup</p><p id="req-pickup" class="text-white text-sm font-medium">...</p></div>
+                </div>
+                <div class="h-[1px] bg-gray-800 ml-5"></div>
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-2 rounded-sm border border-gray-500"></div>
+                    <div><p class="text-[10px] text-gray-500 font-bold uppercase">Drop</p><p id="req-drop" class="text-white text-sm font-medium">...</p></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="document.getElementById('order-modal').classList.add('hidden')" class="py-4 bg-gray-800 rounded-xl font-bold text-gray-400 hover:bg-gray-700 transition">Decline</button>
+                <button id="accept-btn" class="py-4 bg-accent hover:bg-accentHover text-black rounded-xl font-bold text-lg shadow-neon transition active:scale-95">Accept Ride</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // --- YOUR CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDEwuXdyS6swZgF7n-pNW4mjAklOfpz9F0",
+            authDomain: "strinkride.firebaseapp.com",
+            databaseURL: "https://strinkride-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "strinkride",
+            storageBucket: "strinkride.firebasestorage.app",
+            messagingSenderId: "799159533866",
+            appId: "1:799159533866:web:08c0ec5a55c765c4fc1e53",
+            measurementId: "G-B0BTLXMXDT"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const RIDE_ID = "hackathon_demo_ride";
+
+        const modal = document.getElementById('order-modal');
+        const statusDisplay = document.getElementById('status-display');
+        const acceptedView = document.getElementById('accepted-view');
+
+        // 1. Listen for Request
+        onValue(ref(db, 'rides/' + RIDE_ID), (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.status === 'pending') {
+                document.getElementById('req-pickup').innerText = data.pickup;
+                document.getElementById('req-drop').innerText = data.drop;
+                
+                // Dim background
+                statusDisplay.classList.add('opacity-30', 'blur-sm');
+                // Show Sheet
+                modal.classList.remove('hidden');
+            }
+        });
+
+        // 2. Accept Request
+        document.getElementById('accept-btn').addEventListener('click', () => {
+            update(ref(db, 'rides/' + RIDE_ID), {
+                status: 'accepted',
+                driverName: "Raju Bhai",
+                driverVehicle: "Auto (GJ06 AA 1111)"
+            });
+
+            modal.classList.add('hidden');
+            statusDisplay.classList.add('hidden');
+            acceptedView.classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>
