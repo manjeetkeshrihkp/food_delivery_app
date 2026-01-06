@@ -1,7 +1,7 @@
 /* --- DATA --- */
 const allCategories = [
-    { name: "Burgers", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&q=80" },
-    { name: "Pizza", img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200&q=80" },
+    { name: "Burgers", img: "https://b.zmtcdn.com/data/dish_images/ccb7dc2ba2b054419f805da7f05704471634886169.png" },
+    { name: "Pizza", img: "https://b.zmtcdn.com/data/o2_assets/d0bd7c9405ac87f6aa65e31fe55800941632716575.png" },
     { name: "Biryani", img: "https://b.zmtcdn.com/data/o2_assets/bf2d0e73add1c206aeeb9fec762438111727708719.png" },
     { name: "Chicken", img: "https://b.zmtcdn.com/data/dish_images/197987b7ebcd1ee08f8c25ea4e77e20f1634731334.png" },
     { name: "Dosa", img: "https://b.zmtcdn.com/data/o2_assets/8dc39742916ddc369ebeb91928391b931632716660.png" },
@@ -183,3 +183,4 @@ function applySort(type) {
     toggleSortModal(false);
 
 }
+
